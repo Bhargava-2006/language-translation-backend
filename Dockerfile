@@ -4,8 +4,9 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
 
 # Download nltk punkt tokenizer data
 RUN python -c "import nltk; nltk.download('punkt')"
