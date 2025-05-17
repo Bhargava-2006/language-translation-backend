@@ -23,9 +23,11 @@ class TranslationRequest(BaseModel):
 @app.on_event("startup")
 def load_models():
     global model, tokenizer
-    model_name = "aryaumesh/english-to-telugu"
+    model_name = "facebook/mbart-large-50-many-to-many-mmt"
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.src_lang = "en_XX"  # Source: English
+    print("Model loaded.")
 
 @app.post("/translate/")
 async def get_translation(request: TranslationRequest):
@@ -47,8 +49,11 @@ async def get_translation(request: TranslationRequest):
                 sentence += '.'
 
             inputs = tokenizer(sentence, return_tensors="pt")
-            translated = model.generate(**inputs)
-            translated_text = tokenizer.decode(translated[0], skip_special_tokens=True)
+            generated_tokens = model.generate(
+                **inputs,
+                forced_bos_token_id=tokenizer.lang_code_to_id["te_IN"]  # Target: Telugu
+            )
+            translated_text = tokenizer.decode(generated_tokens[0], skip_special_tokens=True)
             translated_sentences.append(translated_text)
 
         translated_lines.append(" ".join(translated_sentences))
@@ -57,5 +62,3 @@ async def get_translation(request: TranslationRequest):
         "original_text": request.text,
         "translated_text": "\n".join(translated_lines)
     }
-
-
